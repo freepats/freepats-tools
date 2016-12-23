@@ -5,6 +5,18 @@ musical instruments and sound banks. Originally created for the FreePats
 project: http://freepats.zenvoid.org/
 
 
+## Dependencies
+
+Requires Python 3 with dateutil, soundfile and numpy modules. This will
+install the required dependencencies on Debian and derived distributions:
+
+    apt-get install python3 python3-dateutil python3-soundfile python3-numpy
+
+Debian jessie does not have python3-soundfile. It can be installed manually
+or, if you prefer, by packages from this custom repository:
+http://zenvoid.org/debian/
+
+
 ## Usage
 
 There are two programs included:
