@@ -49,22 +49,22 @@ match = re.search('\.([a-z0-9]+)$', inputFile.lower())
 if match:
 	inputFormat = match.group(1)
 else:
-	logging.warning("Can not guess format from file name: {}".format(inputFile))
+	logging.error("Can not guess format from file name: {}".format(inputFile))
 	sys.exit(1)
 
 if not inputFormat in inputFormats:
-	logging.warning("Unknown or unsupported input format: {}".format(inputFormat))
+	logging.error("Unknown or unsupported input format: {}".format(inputFormat))
 	sys.exit(1)
 
 match = re.search('\.([a-z0-9]+)$', outputFile.lower())
 if match:
 	outputFormat = match.group(1)
 else:
-	logging.warning("Can not guess format from file name: {}".format(outputFile))
+	logging.error("Can not guess format from file name: {}".format(outputFile))
 	sys.exit(1)
 
 if not outputFormat in outputFormats:
-	logging.warning("Unknown or unsupported output format: {}".format(outputFormat))
+	logging.error("Unknown or unsupported output format: {}".format(outputFormat))
 	sys.exit(1)
 
 print("Reading and processing input file...")

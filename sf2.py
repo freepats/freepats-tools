@@ -43,7 +43,7 @@ class SF2:
 		try:
 			self.outFile = open(fileName, 'wb')
 		except:
-			logging.warning("Can not create file {}".format(fileName))
+			logging.error("Can not create file {}".format(fileName))
 			return False
 
 		try:
@@ -55,7 +55,7 @@ class SF2:
 
 			self.exportChunks(sf2)
 		except:
-			logging.warning("Failed to export SF2 to file {}".format(fileName))
+			logging.error("Failed to export SF2 to file {}".format(fileName))
 			raise
 
 		self.outFile.close()
@@ -109,7 +109,7 @@ class SF2:
 
 		if length > maxLength:
 			newString = string[0:maxLength-1]
-			logging.warning("Truncating string\n Original: %s\n New: %s", string, newString)
+			logging.warning("Truncating string: {}".format(string))
 			string = newString
 			length = maxLength
 
@@ -172,7 +172,7 @@ class SF2:
 					try:
 						data, rate = soundfile.read(file=samplePath, dtype='int16')
 					except:
-						logging.warning("Can not read input audio file {}".format(samplePath))
+						logging.error("Can not read input audio file {}".format(samplePath))
 						raise
 					start = len(smplData) // 2
 					for n in data:

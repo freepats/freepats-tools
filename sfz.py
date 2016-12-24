@@ -36,7 +36,7 @@ class SFZ:
 		try:
 			inFile = open(fileName, 'r')
 		except:
-			logging.warning("Can not open file: {}".format(fileName))
+			logging.error("Can not open file: {}".format(fileName))
 			return False
 		path = os.path.dirname(fileName)
 		if len(path) > 0:
@@ -48,7 +48,7 @@ class SFZ:
 			try:
 				self.processLine(line)
 			except SFZParseError:
-				logging.warning("Error on line {} of file {}".format(lineNumber, fileName))
+				logging.error("Error on line {} of file {}".format(lineNumber, fileName))
 				inFile.close()
 				return False
 
@@ -264,7 +264,7 @@ class SFZ:
 			value = self.convertNumberI(value, 0, 4294967296)
 		elif opcode == 'loop_mode':
 			if not value in ['no_loop', 'one_shot', 'loop_continuous', 'loop_sustain']:
-				logging.warning("Unknown parameter for loop_mode: {}".format(value))
+				logging.error("Unknown parameter for loop_mode: {}".format(value))
 				raise SFZParseError
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
@@ -295,7 +295,7 @@ class SFZ:
 			try:
 				date = dateutil.parser.parse(value)
 			except:
-				logging.warning("Invalid or unknown date format: {}".format(value))
+				logging.error("Invalid or unknown date format: {}".format(value))
 				raise SFZParseError
 			value = date.strftime('%Y-%m-%d')
 		elif var == 'URL':
