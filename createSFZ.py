@@ -59,7 +59,7 @@ soundBank = {
 'Name': 'Unnamed sound bank',
 'Date': time.strftime("%Y-%m-%d"),
 'instruments': [{
-	'Name': 'Unnamed instrument',
+	'Instrument': 'Unnamed instrument',
 	'ampeg_release': '0.5',
 	'groups': [{
 		'loop_mode': 'no_loop',

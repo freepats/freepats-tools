@@ -53,7 +53,7 @@ Generated output will look like this:
     //+ Date: 2016-12-19
     
     <global>
-     //+ Name: Unnamed instrument
+     //+ Instrument: Unnamed instrument
      ampeg_release=0.5
     
     <group>
