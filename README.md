@@ -116,8 +116,6 @@ SFZ is not done yet. Other formats are missing.
 
 * Supports a minimal subset of SFZ opcodes.
 
-* Stereo samples within SF2 sound banks are not supported yet.
-
 
 ## License
 

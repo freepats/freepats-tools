@@ -22,9 +22,14 @@ import dateutil.parser
 import soundfile
 
 
+class SF2ExportError(Exception):
+	pass
+
+
 class SF2:
 
 	sfGenId = {
+		'pan': 17,
 		'attackVolEnv': 34,
 		'holdVolEnv': 35,
 		'decayVolEnv': 36,
@@ -60,7 +65,7 @@ class SF2:
 
 		self.outFile.close()
 		self.outFile = None
-		self.sampleList = []
+		self.sampleList = {}
 		self.shdrData = bytearray()
 		return True
 
@@ -155,43 +160,70 @@ class SF2:
 
 
 	def sfSdta(self):
-		self.sampleList = []
+		sampleIndex = 0
+		self.sampleList = {}
 		self.shdrData = bytearray()
 		smplData = bytearray()
 		for instrument in self.soundBank['instruments']:
 			for group in instrument['groups']:
 				for region in group['regions']:
 					sample = self.getOpcode('sample', instrument, group, region)
-					if not sample or sample in self.sampleList:
+					if not sample or sample in self.sampleList.keys():
 						continue
 
-					self.sampleList.append(sample)
 					samplePath = sample
 					if not os.path.isabs(samplePath) and 'Path' in self.soundBank.keys():
 						samplePath = os.path.join(self.soundBank['Path'], sample)
 					try:
-						data, rate = soundfile.read(file=samplePath, dtype='int16')
+						data, rate = soundfile.read(file=samplePath, dtype='int16', always_2d=True)
 					except:
 						logging.error("Can not read input audio file {}".format(samplePath))
 						raise
-					start = len(smplData) // 2
-					for n in data:
-						smplData += struct.pack('<h', n)
-					end = len(smplData) // 2
-					smplData += bytes(46 * 2)
+					channels = len(data[0])
+					if channels < 1:
+						logging.error("Can not read data from audio file {}".format(samplePath))
+						raise SF2ExportError
+					if channels > 2:
+						logging.error("Audio file contains more than 2 channels: {}".format(samplePath))
+						raise SF2ExportError
 
-					loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
-					loopStartDefault = 0
-					loopEndDefault = end - start
-					if loopMode == 'no_loop':
-						loopStartDefault += 8
-						loopEndDefault -= 8
-					loopStart = start + self.getOpcode('loop_start', instrument, group, region, loopStartDefault)
-					loopEnd = start + self.getOpcode('loop_end', instrument, group, region, loopEndDefault)
-					pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
-					name, ext = os.path.splitext(os.path.basename(sample))
-					self.shdrData += struct.pack('<19sBIIIIIBbHH', \
-						name.encode('ascii'), 0, start, end, loopStart, loopEnd, rate, pitch, 0, 1, 0)
+					self.sampleList[sample] = [channels, sampleIndex]
+					for ch in range(0, channels):
+						start = len(smplData) // 2
+						for n in data:
+							smplData += struct.pack('<h', n[ch])
+						end = len(smplData) // 2
+						smplData += bytes(46 * 2)
+
+						sampleType = 1 # mono sample
+						if channels == 2:
+							if ch == 0:
+								sampleType = 2 # right sample
+							else:
+								sampleType = 4 # left sample
+
+						loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
+						loopStartDefault = 0
+						loopEndDefault = end - start
+						if loopMode == 'no_loop':
+							loopStartDefault += 8
+							loopEndDefault -= 8
+						loopStart = start + self.getOpcode('loop_start', instrument, group, region, loopStartDefault)
+						loopEnd = start + self.getOpcode('loop_end', instrument, group, region, loopEndDefault)
+						pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
+						name, ext = os.path.splitext(os.path.basename(sample))
+						sampleLink = 0
+						if channels == 2:
+							if ch == 0:
+								name += 'R'
+								sampleLink = sampleIndex + 1
+							else:
+								name += 'L'
+								sampleLink = sampleIndex - 1
+						self.shdrData += struct.pack('<19sBIIIIIBbHH',
+							name.encode('ascii'), 0, start, end, loopStart, loopEnd, rate, pitch, 0,
+							sampleLink, sampleType)
+						sampleIndex += 1
 
 		return [[b'LIST', b'sdta'], [
 			[b'smpl', smplData]
@@ -349,46 +381,57 @@ class SF2:
 					sample = self.getOpcode('sample', instrument, group, region)
 					if not sample:
 						continue
-					ibagData += struct.pack('<HH', igenNdx, 0)
-					ibagNdx += 1
 
-					# Zone options
-					# ------------
+					channels = self.sampleList[sample][0]
+					for ch in range(0, channels):
+						ibagData += struct.pack('<HH', igenNdx, 0)
+						ibagNdx += 1
 
-					# keyRange (if exists, it must be the first)
-					lokey = self.getOpcode('lokey', instrument, group, region, 0)
-					hikey = self.getOpcode('hikey', instrument, group, region, 127)
-					if lokey > 0 or hikey < 127:
-						igenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], lokey, hikey)
+						# Zone options
+						# ------------
+
+						# keyRange (if exists, it must be the first)
+						lokey = self.getOpcode('lokey', instrument, group, region, 0)
+						hikey = self.getOpcode('hikey', instrument, group, region, 127)
+						if lokey > 0 or hikey < 127:
+							igenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], lokey, hikey)
+							igenNdx += 1
+
+						# velRange (if exists, it must be preceded only by keyRange)
+						lovel = self.getOpcode('lovel', None, group, region, 0)
+						hivel = self.getOpcode('hivel', None, group, region, 127)
+						if lovel > 0 or hivel < 127:
+							igenData += struct.pack('<HBB', SF2.sfGenId['velRange'], lovel, hivel)
+							igenNdx += 1
+
+						# pan
+						if channels == 2:
+							if ch == 0:
+								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], 500)
+							else:
+								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], -500)
+							igenNdx += 1
+
+						# sampleModes
+						loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
+						sampleModes = 0
+						if loopMode == 'loop_continuous':
+							sampleModes = 1
+						elif loopMode == 'loop_sustain':
+							sampleModes = 3
+						if sampleModes != 0:
+							igenData += struct.pack('<HH', SF2.sfGenId['sampleModes'], sampleModes)
+							igenNdx += 1
+
+						# other options
+						genList = self.createGenList(None, group, region)
+						for gen in genList.keys():
+							igenData += struct.pack('<Hh', SF2.sfGenId[gen], genList[gen])
+							igenNdx += 1
+
+						# sampleID (it must be the last)
+						igenData += struct.pack('<HH', SF2.sfGenId['sampleID'], self.sampleList[sample][1] + ch)
 						igenNdx += 1
-
-					# velRange (if exists, it must be preceded only by keyRange)
-					lovel = self.getOpcode('lovel', None, group, region, 0)
-					hivel = self.getOpcode('hivel', None, group, region, 127)
-					if lovel > 0 or hivel < 127:
-						igenData += struct.pack('<HBB', SF2.sfGenId['velRange'], lovel, hivel)
-						igenNdx += 1
-
-					# sampleModes
-					loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
-					sampleModes = 0
-					if loopMode == 'loop_continuous':
-						sampleModes = 1
-					elif loopMode == 'loop_sustain':
-						sampleModes = 3
-					if sampleModes != 0:
-						igenData += struct.pack('<HH', SF2.sfGenId['sampleModes'], sampleModes)
-						igenNdx += 1
-
-					# other options
-					genList = self.createGenList(None, group, region)
-					for gen in genList.keys():
-						igenData += struct.pack('<Hh', SF2.sfGenId[gen], genList[gen])
-						igenNdx += 1
-
-					# sampleID (it must be the last)
-					igenData += struct.pack('<HH', SF2.sfGenId['sampleID'], self.sampleList.index(sample))
-					igenNdx += 1
 
 		phdrData += struct.pack('<20sHHHIII', b'EOP', 0, 0, pbagNdx, 0, 0, 0)
 		pbagData += struct.pack('<HH', pgenNdx, 0)
