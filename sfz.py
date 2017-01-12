@@ -266,6 +266,12 @@ class SFZ:
 			if not value in ['no_loop', 'one_shot', 'loop_continuous', 'loop_sustain']:
 				logging.error("Unknown parameter for loop_mode: {}".format(value))
 				raise SFZParseError
+		elif opcode == 'fil_type':
+			if not value in ['lpf_1p', 'hpf_1p', 'lpf_2p', 'hpf_2p', 'bpf_2p', 'brf_2p']:
+				logging.error("Unknown parameter for fil_type: {}".format(value))
+				raise SFZParseError
+		elif opcode == 'cutoff':
+			value = self.convertNumberF(value, 0, 2822400)
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
 			return True

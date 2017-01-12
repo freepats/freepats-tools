@@ -29,6 +29,7 @@ class SF2ExportError(Exception):
 class SF2:
 
 	sfGenId = {
+		'initialFilterFc': 8,
 		'pan': 17,
 		'attackVolEnv': 34,
 		'holdVolEnv': 35,
@@ -42,6 +43,14 @@ class SF2:
 		'sampleModes': 54
 	}
 
+	sfGenType = {
+		'attackVolEnv': 'h',
+		'decayVolEnv': 'h',
+		'sustainVolEnv': 'h',
+		'holdVolEnv': 'h',
+		'releaseVolEnv': 'h',
+		'initialFilterFc': 'h'
+	}
 
 	def exportSF2(self, soundBank, fileName):
 		self.soundBank = soundBank
@@ -124,7 +133,18 @@ class SF2:
 
 
 	def toCentibels(self, percent):
-		return 200 * math.log10(100 / percent)
+		return int(round(200 * math.log10(100 / percent)))
+
+
+	def toAbsoluteCents(self, freq):
+		if freq == 0:
+			return 1500
+		value = int(round(1200 * math.log2(freq/440) + 6900))
+		if value < 1500:
+			value = 1500
+		if value > 13500:
+			value = 13500
+		return value
 
 
 	def genTime(self, seconds):
@@ -239,7 +259,8 @@ class SF2:
 			'decayVolEnv': 'ampeg_decay',
 			'sustainVolEnv': 'ampeg_sustain',
 			'holdVolEnv': 'ampeg_hold',
-			'releaseVolEnv': 'ampeg_release'
+			'releaseVolEnv': 'ampeg_release',
+			'initialFilterFc': 'cutoff'
 		}
 		for gen in genOpcodes.keys():
 			value = self.getOpcode(genOpcodes[gen], instrument, group, region)
@@ -254,6 +275,13 @@ class SF2:
 					genList[gen] = self.toCentibels(value)
 					if genList[gen] > 1000:
 						genList[gen] = 1000
+			elif gen == 'initialFilterFc':
+				fil_type = self.getOpcode('fil_type', instrument, group, region)
+				if fil_type == None or fil_type == 'lpf_2p':
+					genList[gen] = self.toAbsoluteCents(value)
+				else:
+					logging.error("SF2 format does not support filter type {}".format(fil_type))
+					raise SF2ExportError
 
 		loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
 		if loopMode == 'one_shot':
@@ -375,7 +403,7 @@ class SF2:
 				ibagNdx += 1
 
 			for gen in genList.keys():
-				igenData += struct.pack('<Hh', SF2.sfGenId[gen], genList[gen])
+				igenData += struct.pack('<H{}'.format(SF2.sfGenType[gen]), SF2.sfGenId[gen], genList[gen])
 				igenNdx += 1
 
 			for group in instrument['groups']:
@@ -428,7 +456,7 @@ class SF2:
 						# other options
 						genList = self.createGenList(None, group, region)
 						for gen in genList.keys():
-							igenData += struct.pack('<Hh', SF2.sfGenId[gen], genList[gen])
+							igenData += struct.pack('<H{}'.format(SF2.sfGenType[gen]), SF2.sfGenId[gen], genList[gen])
 							igenNdx += 1
 
 						# sampleID (it must be the last)
