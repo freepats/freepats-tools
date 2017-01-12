@@ -17,7 +17,7 @@
 # to convert from XML descriptions to SoundFont files:
 # https://github.com/freepats/tools
 
-import struct, logging, os.path, math, sys
+import struct, logging, os, math, sys
 import dateutil.parser
 import soundfile
 
@@ -60,8 +60,10 @@ class SF2:
 
 			self.exportChunks(sf2)
 		except:
+			self.outFile.close()
+			os.unlink(fileName)
 			logging.error("Failed to export SF2 to file {}".format(fileName))
-			raise
+			return False
 
 		self.outFile.close()
 		self.outFile = None
