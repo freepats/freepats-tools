@@ -68,11 +68,16 @@ class SF2:
 			]]]
 
 			self.exportChunks(sf2)
-		except:
+		except SF2ExportError:
 			self.outFile.close()
 			os.unlink(fileName)
 			logging.error("Failed to export SF2 to file {}".format(fileName))
 			return False
+		except:
+			self.outFile.close()
+			os.unlink(fileName)
+			logging.error("Failed to export SF2 to file {}".format(fileName))
+			raise
 
 		self.outFile.close()
 		self.outFile = None
@@ -200,7 +205,7 @@ class SF2:
 						data, rate = soundfile.read(file=samplePath, dtype='int16', always_2d=True)
 					except:
 						logging.error("Can not read input audio file {}".format(samplePath))
-						raise
+						raise SF2ExportError
 					channels = len(data[0])
 					if channels < 1:
 						logging.error("Can not read data from audio file {}".format(samplePath))
