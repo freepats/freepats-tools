@@ -225,9 +225,9 @@ class SF2:
 						sampleType = 1 # mono sample
 						if channels == 2:
 							if ch == 0:
-								sampleType = 2 # right sample
-							else:
 								sampleType = 4 # left sample
+							else:
+								sampleType = 2 # right sample
 
 						loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
 						loopStartDefault = 0
@@ -242,10 +242,10 @@ class SF2:
 						sampleLink = 0
 						if channels == 2:
 							if ch == 0:
-								name += 'R'
+								name += 'L'
 								sampleLink = sampleIndex + 1
 							else:
-								name += 'L'
+								name += 'R'
 								sampleLink = sampleIndex - 1
 						self.shdrData += struct.pack('<19sBIIIIIBbHH',
 							name.encode('ascii'), 0, start, end, loopStart, loopEnd, rate, pitch, 0,
@@ -442,9 +442,9 @@ class SF2:
 						# pan
 						if channels == 2:
 							if ch == 0:
-								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], 500)
-							else:
 								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], -500)
+							else:
+								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], 500)
 							igenNdx += 1
 
 						# sampleModes
