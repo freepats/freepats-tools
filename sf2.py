@@ -54,6 +54,7 @@ class SF2:
 
 	def exportSF2(self, soundBank, fileName):
 		self.soundBank = soundBank
+		self.nextProgram = 0
 		try:
 			self.outFile = open(fileName, 'wb')
 		except:
@@ -242,10 +243,10 @@ class SF2:
 						sampleLink = 0
 						if channels == 2:
 							if ch == 0:
-								name += 'L'
+								name += '_L'
 								sampleLink = sampleIndex + 1
 							else:
-								name += 'R'
+								name += '_R'
 								sampleLink = sampleIndex - 1
 						self.shdrData += struct.pack('<19sBIIIIIBbHH',
 							name.encode('ascii'), 0, start, end, loopStart, loopEnd, rate, pitch, 0,
@@ -333,9 +334,11 @@ class SF2:
 			instrumentName = 'Instrument'
 			if 'Instrument' in self.soundBank.keys():
 				instrumentName = self.soundBank['Instrument']
-			program = 0
+			program = self.nextProgram
 			if 'Program' in self.soundBank.keys():
 				program = self.soundBank['Program'] - 1
+			else:
+				self.nextProgram += 1
 			phdrData += struct.pack('<19sBHHHIII', instrumentName.encode('ascii'), 0, program, 0, pbagNdx, 0, 0, 0)
 
 			for instrument in self.soundBank['instruments']:
@@ -374,26 +377,34 @@ class SF2:
 				instrumentName = instrument['Instrument']
 			elif 'Instrument' in self.soundBank.keys():
 				instrumentName = self.soundBank['Instrument']
-			program = 0
+			createPreset = True
+			program = self.nextProgram
 			if 'Program' in instrument.keys():
 				program = instrument['Program'] - 1
-			bank = 0
-			if self.getOpcode('PercussionMode', instrument, default = False):
-				bank = 128
-			phdrData += struct.pack('<19sBHHHIII', instrumentName.encode('ascii'), 0, program, bank, pbagNdx, 0, 0, 0)
-			pbagData += struct.pack('<HH', pgenNdx, 0)
-			pbagNdx += 1
+			elif 'Instrument' in self.soundBank.keys():
+				createPreset = False
+			else:
+				self.nextProgram += 1
 
-			# keyRange (if exists, it must be the first)
-			keyMin, keyMax = self.getKeyRange(instrument)
-			if keyMin > 0 or keyMax < 127:
-				pgenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], keyMin, keyMax)
+			if createPreset:
+				bank = 0
+				if self.getOpcode('PercussionMode', instrument, default = False):
+					bank = 128
+				phdrData += struct.pack('<19sBHHHIII', instrumentName.encode('ascii'), 0,
+					program, bank, pbagNdx, 0, 0, 0)
+				pbagData += struct.pack('<HH', pgenNdx, 0)
+				pbagNdx += 1
+
+				# keyRange (if exists, it must be the first)
+				keyMin, keyMax = self.getKeyRange(instrument)
+				if keyMin > 0 or keyMax < 127:
+					pgenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], keyMin, keyMax)
+					pgenNdx += 1
+
+				# instrument (it must be the last)
+				pgenData += struct.pack('<HH', SF2.sfGenId['instrument'], instNum)
 				pgenNdx += 1
-
-			# instrument (it must be the last)
-			pgenData += struct.pack('<HH', SF2.sfGenId['instrument'], instNum)
-			pgenNdx += 1
-			instNum += 1
+				instNum += 1
 
 			instData += struct.pack('<19sBH', instrumentName.encode('ascii'), 0, ibagNdx)
 
