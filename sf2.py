@@ -30,6 +30,7 @@ class SF2:
 
 	sfGenId = {
 		'initialFilterFc': 8,
+		'initialFilterQ': 9,
 		'pan': 17,
 		'attackVolEnv': 34,
 		'holdVolEnv': 35,
@@ -49,7 +50,8 @@ class SF2:
 		'sustainVolEnv': 'h',
 		'holdVolEnv': 'h',
 		'releaseVolEnv': 'h',
-		'initialFilterFc': 'h'
+		'initialFilterFc': 'h',
+		'initialFilterQ': 'h'
 	}
 
 	def exportSF2(self, soundBank, fileName):
@@ -138,11 +140,13 @@ class SF2:
 		return struct.pack('{}s'.format(length), string.encode('ascii'))
 
 
-	def toCentibels(self, percent):
+	def percentToCentibels(self, percent):
+		percent = float(percent)
 		return int(round(200 * math.log10(100 / percent)))
 
 
-	def toAbsoluteCents(self, freq):
+	def freqToAbsoluteCents(self, freq):
+		freq = float(freq)
 		if freq == 0:
 			return 1500
 		value = int(round(1200 * math.log2(freq/440) + 6900))
@@ -266,7 +270,8 @@ class SF2:
 			'sustainVolEnv': 'ampeg_sustain',
 			'holdVolEnv': 'ampeg_hold',
 			'releaseVolEnv': 'ampeg_release',
-			'initialFilterFc': 'cutoff'
+			'initialFilterFc': 'cutoff',
+			'initialFilterQ': 'resonance'
 		}
 		for gen in genOpcodes.keys():
 			value = self.getOpcode(genOpcodes[gen], instrument, group, region)
@@ -275,19 +280,22 @@ class SF2:
 			if gen in ['attackVolEnv', 'decayVolEnv', 'holdVolEnv', 'releaseVolEnv']:
 				genList[gen] = self.genTime(value)
 			elif gen == 'sustainVolEnv':
+				value = float(value)
 				if value == 0:
 					genList[gen] = 1000
 				else:
-					genList[gen] = self.toCentibels(value)
+					genList[gen] = self.percentToCentibels(value)
 					if genList[gen] > 1000:
 						genList[gen] = 1000
 			elif gen == 'initialFilterFc':
 				fil_type = self.getOpcode('fil_type', instrument, group, region)
 				if fil_type == None or fil_type == 'lpf_2p':
-					genList[gen] = self.toAbsoluteCents(value)
+					genList[gen] = self.freqToAbsoluteCents(value)
 				else:
 					logging.error("SF2 format does not support filter type {}".format(fil_type))
 					raise SF2ExportError
+			elif gen == 'initialFilterQ':
+				genList[gen] = int(float(value) * 10)
 
 		loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
 		if loopMode == 'one_shot':

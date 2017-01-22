@@ -272,6 +272,8 @@ class SFZ:
 				raise SFZParseError
 		elif opcode == 'cutoff':
 			value = self.convertNumberF(value, 0, 2822400)
+		elif opcode == 'resonance':
+			value = self.convertNumberF(value, 0, 40)
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
 			return True
