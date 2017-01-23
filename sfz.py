@@ -255,6 +255,8 @@ class SFZ:
 			value = self.convertNumberI(value, -1, 127)
 		elif opcode == 'volume':
 			value = self.convertNumberF(value, -144, 6)
+		elif opcode == 'tune':
+			value = self.convertNumberI(value, -100, 100)
 		elif opcode == 'ampeg_attack' \
 		or opcode == 'ampeg_decay' \
 		or opcode == 'ampeg_sustain' \
