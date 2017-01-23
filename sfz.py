@@ -257,6 +257,8 @@ class SFZ:
 			value = self.convertNumberF(value, -144, 6)
 		elif opcode == 'tune':
 			value = self.convertNumberI(value, -100, 100)
+		elif opcode == 'pitch_keytrack':
+			value = self.convertNumberI(value, -1200, 1200)
 		elif opcode == 'ampeg_attack' \
 		or opcode == 'ampeg_decay' \
 		or opcode == 'ampeg_sustain' \

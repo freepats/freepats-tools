@@ -43,7 +43,8 @@ class SF2:
 		'initialAttenuation': 48,
 		'fineTune': 52,
 		'sampleID': 53,
-		'sampleModes': 54
+		'sampleModes': 54,
+		'scaleTuning': 56
 	}
 
 	sfGenType = {
@@ -55,7 +56,8 @@ class SF2:
 		'initialFilterFc': 'h',
 		'initialFilterQ': 'h',
 		'initialAttenuation': 'h',
-		'fineTune': 'h'
+		'fineTune': 'h',
+		'scaleTuning': 'h'
 	}
 
 	def exportSF2(self, soundBank, fileName):
@@ -277,7 +279,8 @@ class SF2:
 			'initialFilterFc': 'cutoff',
 			'initialFilterQ': 'resonance',
 			'initialAttenuation': 'volume',
-			'fineTune': 'tune'
+			'fineTune': 'tune',
+			'scaleTuning': 'pitch_keytrack'
 		}
 		for gen in genOpcodes.keys():
 			value = self.getOpcode(genOpcodes[gen], instrument, group, region)
@@ -308,6 +311,8 @@ class SF2:
 					logging.warning("SF2 format does not support amplification (positive volume value)")
 				genList[gen] = int(-value * 10)
 			elif gen == 'fineTune':
+				genList[gen] = int(value)
+			elif gen == 'scaleTuning':
 				genList[gen] = int(value)
 
 		loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
