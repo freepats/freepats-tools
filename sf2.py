@@ -40,6 +40,7 @@ class SF2:
 		'instrument': 41,
 		'keyRange': 43,
 		'velRange': 44,
+		'initialAttenuation': 48,
 		'sampleID': 53,
 		'sampleModes': 54
 	}
@@ -51,7 +52,8 @@ class SF2:
 		'holdVolEnv': 'h',
 		'releaseVolEnv': 'h',
 		'initialFilterFc': 'h',
-		'initialFilterQ': 'h'
+		'initialFilterQ': 'h',
+		'initialAttenuation': 'h'
 	}
 
 	def exportSF2(self, soundBank, fileName):
@@ -271,7 +273,8 @@ class SF2:
 			'holdVolEnv': 'ampeg_hold',
 			'releaseVolEnv': 'ampeg_release',
 			'initialFilterFc': 'cutoff',
-			'initialFilterQ': 'resonance'
+			'initialFilterQ': 'resonance',
+			'initialAttenuation': 'volume'
 		}
 		for gen in genOpcodes.keys():
 			value = self.getOpcode(genOpcodes[gen], instrument, group, region)
@@ -296,6 +299,11 @@ class SF2:
 					raise SF2ExportError
 			elif gen == 'initialFilterQ':
 				genList[gen] = int(float(value) * 10)
+			elif gen == 'initialAttenuation':
+				value = float(value)
+				if value > 0:
+					logging.warning("SF2 format does not support amplification (positive volume value)")
+				genList[gen] = int(-value * 10)
 
 		loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
 		if loopMode == 'one_shot':

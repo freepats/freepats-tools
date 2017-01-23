@@ -253,6 +253,8 @@ class SFZ:
 		elif opcode == 'lovel' \
 		or opcode == 'hivel':
 			value = self.convertNumberI(value, -1, 127)
+		elif opcode == 'volume':
+			value = self.convertNumberF(value, -144, 6)
 		elif opcode == 'ampeg_attack' \
 		or opcode == 'ampeg_decay' \
 		or opcode == 'ampeg_sustain' \
