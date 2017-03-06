@@ -44,7 +44,8 @@ class SF2:
 		'fineTune': 52,
 		'sampleID': 53,
 		'sampleModes': 54,
-		'scaleTuning': 56
+		'scaleTuning': 56,
+		'overridingRootKey': 58
 	}
 
 	sfGenType = {
@@ -225,7 +226,8 @@ class SF2:
 						logging.error("Audio file contains more than 2 channels: {}".format(samplePath))
 						raise SF2ExportError
 
-					self.sampleList[sample] = [channels, sampleIndex]
+					pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
+					self.sampleList[sample] = [channels, sampleIndex, pitch]
 					for ch in range(0, channels):
 						start = len(smplData) // 2
 						for n in data:
@@ -248,7 +250,6 @@ class SF2:
 							loopEndDefault -= 8
 						loopStart = start + self.getOpcode('loop_start', instrument, group, region, loopStartDefault)
 						loopEnd = start + self.getOpcode('loop_end', instrument, group, region, loopEndDefault)
-						pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
 						name, ext = os.path.splitext(os.path.basename(sample))
 						sampleLink = 0
 						if channels == 2:
@@ -493,6 +494,12 @@ class SF2:
 							sampleModes = 3
 						if sampleModes != 0:
 							igenData += struct.pack('<HH', SF2.sfGenId['sampleModes'], sampleModes)
+							igenNdx += 1
+
+						# overridingRootKey
+						pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
+						if pitch != self.sampleList[sample][2]:
+							igenData += struct.pack('<Hh', SF2.sfGenId['overridingRootKey'], pitch)
 							igenNdx += 1
 
 						# other options
