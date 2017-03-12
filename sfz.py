@@ -280,6 +280,8 @@ class SFZ:
 			value = self.convertNumberF(value, 0, 2822400)
 		elif opcode == 'resonance':
 			value = self.convertNumberF(value, 0, 40)
+		elif opcode == 'delay':
+			value = self.convertNumberF(value, 0, 100)
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
 			return True

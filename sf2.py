@@ -32,6 +32,7 @@ class SF2:
 		'initialFilterFc': 8,
 		'initialFilterQ': 9,
 		'pan': 17,
+		'delayVolEnv': 33,
 		'attackVolEnv': 34,
 		'holdVolEnv': 35,
 		'decayVolEnv': 36,
@@ -49,6 +50,7 @@ class SF2:
 	}
 
 	sfGenType = {
+		'delayVolEnv': 'h',
 		'attackVolEnv': 'h',
 		'decayVolEnv': 'h',
 		'sustainVolEnv': 'h',
@@ -272,6 +274,7 @@ class SF2:
 	def createGenList(self, instrument = None, group = None, region = None):
 		genList = {}
 		genOpcodes = {
+			'delayVolEnv': 'delay',
 			'attackVolEnv': 'ampeg_attack',
 			'decayVolEnv': 'ampeg_decay',
 			'sustainVolEnv': 'ampeg_sustain',
@@ -287,7 +290,7 @@ class SF2:
 			value = self.getOpcode(genOpcodes[gen], instrument, group, region)
 			if value == None:
 				continue
-			if gen in ['attackVolEnv', 'decayVolEnv', 'holdVolEnv', 'releaseVolEnv']:
+			if gen in ['delayVolEnv', 'attackVolEnv', 'decayVolEnv', 'holdVolEnv', 'releaseVolEnv']:
 				genList[gen] = self.genTime(value)
 			elif gen == 'sustainVolEnv':
 				value = float(value)
