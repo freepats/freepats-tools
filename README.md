@@ -12,10 +12,6 @@ install the required dependencencies on Debian and derived distributions:
 
     apt-get install python3 python3-dateutil python3-soundfile python3-numpy
 
-Debian jessie does not have python3-soundfile. It can be installed manually
-or, if you prefer, by packages from this custom repository:
-http://zenvoid.org/debian/
-
 
 ## Usage
 
@@ -51,11 +47,11 @@ Generated output will look like this:
 
     //+ Name: Unnamed sound bank
     //+ Date: 2016-12-19
-    
+
     <global>
      //+ Instrument: Unnamed instrument
      ampeg_release=0.5
-    
+
     <group>
      loop_mode=no_loop
     <region>
