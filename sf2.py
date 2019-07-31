@@ -453,67 +453,97 @@ class SF2:
 				igenNdx += 1
 
 			for group in instrument['groups']:
-				for region in group['regions']:
-					sample = self.getOpcode('sample', instrument, group, region)
-					if not sample:
-						continue
+				lovel = 0
+				hivel = 127
+				vel = 0
+				randomRegion = False
+				if self.getOpcode('RandomRegion', None, group, default = False):
+					lovel = self.getOpcode('lovel', None, group, default = 0)
+					hivel = self.getOpcode('hivel', None, group, default = 127)
+					vel = hivel
+					randomRegion = True
 
-					channels = self.sampleList[sample][0]
-					for ch in range(0, channels):
-						ibagData += struct.pack('<HH', igenNdx, 0)
-						ibagNdx += 1
+				repeat = True
+				while repeat:
+					for region in group['regions']:
+						sample = self.getOpcode('sample', instrument, group, region)
+						if not sample:
+							continue
 
-						# Zone options
-						# ------------
+						channels = self.sampleList[sample][0]
+						for ch in range(0, channels):
+							ibagData += struct.pack('<HH', igenNdx, 0)
+							ibagNdx += 1
 
-						# keyRange (if exists, it must be the first)
-						lokey = self.getOpcode('lokey', instrument, group, region, 0)
-						hikey = self.getOpcode('hikey', instrument, group, region, 127)
-						if lokey > 0 or hikey < 127:
-							igenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], lokey, hikey)
-							igenNdx += 1
+							# Zone options
+							# ------------
 
-						# velRange (if exists, it must be preceded only by keyRange)
-						lovel = self.getOpcode('lovel', None, group, region, 0)
-						hivel = self.getOpcode('hivel', None, group, region, 127)
-						if lovel > 0 or hivel < 127:
-							igenData += struct.pack('<HBB', SF2.sfGenId['velRange'], lovel, hivel)
-							igenNdx += 1
+							# keyRange (if exists, it must be the first)
+							lokey = self.getOpcode('lokey', instrument, group, region, 0)
+							hikey = self.getOpcode('hikey', instrument, group, region, 127)
+							if lokey > 0 or hikey < 127:
+								igenData += struct.pack('<HBB', SF2.sfGenId['keyRange'], lokey, hikey)
+								igenNdx += 1
 
-						# pan
-						if channels == 2:
-							if ch == 0:
-								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], -500)
+							# velRange (if exists, it must be preceded only by keyRange)
+							if randomRegion:
+								igenData += struct.pack('<HBB', SF2.sfGenId['velRange'], vel, vel)
+								igenNdx += 1
 							else:
-								igenData += struct.pack('<Hh', SF2.sfGenId['pan'], 500)
+								lovel = self.getOpcode('lovel', None, group, region, 0)
+								hivel = self.getOpcode('hivel', None, group, region, 127)
+								if lovel > 0 or hivel < 127:
+									igenData += struct.pack('<HBB', SF2.sfGenId['velRange'], lovel, hivel)
+									igenNdx += 1
+
+							# pan
+							if channels == 2:
+								if ch == 0:
+									igenData += struct.pack('<Hh', SF2.sfGenId['pan'], -500)
+								else:
+									igenData += struct.pack('<Hh', SF2.sfGenId['pan'], 500)
+								igenNdx += 1
+							else:
+								pan = self.getOpcode('pan', instrument, group, region, 0)
+								if pan != 0:
+									igenData += struct.pack('<Hh', SF2.sfGenId['pan'], int(pan * 5))
+									igenNdx += 1
+
+							# sampleModes
+							loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
+							sampleModes = 0
+							if loopMode == 'loop_continuous':
+								sampleModes = 1
+							elif loopMode == 'loop_sustain':
+								sampleModes = 3
+							if sampleModes != 0:
+								igenData += struct.pack('<HH', SF2.sfGenId['sampleModes'], sampleModes)
+								igenNdx += 1
+
+							# overridingRootKey
+							pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
+							if pitch != self.sampleList[sample][2]:
+								igenData += struct.pack('<Hh', SF2.sfGenId['overridingRootKey'], pitch)
+								igenNdx += 1
+
+							# other options
+							genList = self.createGenList(None, group, region)
+							for gen in genList.keys():
+								igenData += struct.pack('<H{}'.format(SF2.sfGenType[gen]), SF2.sfGenId[gen], genList[gen])
+								igenNdx += 1
+
+							# sampleID (it must be the last)
+							igenData += struct.pack('<HH', SF2.sfGenId['sampleID'], self.sampleList[sample][1] + ch)
 							igenNdx += 1
 
-						# sampleModes
-						loopMode = self.getOpcode('loop_mode', instrument, group, region, 'no_loop')
-						sampleModes = 0
-						if loopMode == 'loop_continuous':
-							sampleModes = 1
-						elif loopMode == 'loop_sustain':
-							sampleModes = 3
-						if sampleModes != 0:
-							igenData += struct.pack('<HH', SF2.sfGenId['sampleModes'], sampleModes)
-							igenNdx += 1
+						if randomRegion:
+							vel -= 1
+							if vel == 0:
+								repeat = False
+								break
 
-						# overridingRootKey
-						pitch = self.getOpcode('pitch_keycenter', instrument, group, region, 60)
-						if pitch != self.sampleList[sample][2]:
-							igenData += struct.pack('<Hh', SF2.sfGenId['overridingRootKey'], pitch)
-							igenNdx += 1
-
-						# other options
-						genList = self.createGenList(None, group, region)
-						for gen in genList.keys():
-							igenData += struct.pack('<H{}'.format(SF2.sfGenType[gen]), SF2.sfGenId[gen], genList[gen])
-							igenNdx += 1
-
-						# sampleID (it must be the last)
-						igenData += struct.pack('<HH', SF2.sfGenId['sampleID'], self.sampleList[sample][1] + ch)
-						igenNdx += 1
+					if not randomRegion:
+						repeat = False
 
 		phdrData += struct.pack('<20sHHHIII', b'EOP', 0, 0, pbagNdx, 0, 0, 0)
 		pbagData += struct.pack('<HH', pgenNdx, 0)

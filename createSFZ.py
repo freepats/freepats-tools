@@ -34,8 +34,8 @@ if len(sys.argv) < 2:
 sfz = SFZ()
 regions = {}
 
-noteRegEx = re.compile('^(.+[-_])?(([abcdefgABCDEFG])([b#]?)(-?[0-9]))(v(([0-9]{1,3})|[LMHlmh]))?\.wav$')
-numRegEx = re.compile('^(.+[-_])?([0-9]{1,3})\.wav')
+noteRegEx = re.compile('^(.+[-_])?(([abcdefgABCDEFG])([b#]?)(-?[0-9]))(v(([0-9]{1,3})|[LMHlmh]))?([-_][0-9]+)?\.wav$')
+numRegEx = re.compile('^(.+[-_])?([0-9]{1,3})(v(([0-9]{1,3})|[LMHlmh]))?([-_][0-9]+)?\.wav')
 
 for fName in sys.argv[1:]:
 	match = noteRegEx.search(os.path.basename(fName))

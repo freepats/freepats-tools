@@ -282,6 +282,12 @@ class SFZ:
 			value = self.convertNumberF(value, 0, 40)
 		elif opcode == 'delay':
 			value = self.convertNumberF(value, 0, 100)
+		elif opcode == 'lorand':
+			value = self.convertNumberF(value, 0, 1)
+		elif opcode == 'hirand':
+			value = self.convertNumberF(value, 0, 1)
+		elif opcode == 'pan':
+			value = self.convertNumberF(value, -100, 100)
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
 			return True
@@ -328,6 +334,10 @@ class SFZ:
 			value = self.convertNumberI(value, 1, 128)
 		elif var == 'PercussionMode':
 			if self.insideGroup or not self.insideInstrument:
+				raise SFZParseError
+			value = self.convertBoolean(value)
+		elif var == 'RandomRegion':
+			if self.insideRegion or not self.insideGroup:
 				raise SFZParseError
 			value = self.convertBoolean(value)
 		else:
