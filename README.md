@@ -1,4 +1,4 @@
-# SF-Tools
+# FreePats-Tools
 
 Tools to manage, create and convert sound fonts, collections of sampled
 musical instruments and sound banks. Originally created for the FreePats
