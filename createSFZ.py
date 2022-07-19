@@ -53,6 +53,7 @@ for fName in sys.argv[1:]:
 			logging.warning("Can't guess pitch from file name: {}".format(fName))
 			continue
 		regions[noteNum] = fName
+		continue
 	logging.warning("Can't guess pitch from file name: {}".format(fName))
 
 soundBank = {
