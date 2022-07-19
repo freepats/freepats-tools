@@ -288,6 +288,8 @@ class SFZ:
 			value = self.convertNumberF(value, 0, 1)
 		elif opcode == 'pan':
 			value = self.convertNumberF(value, -100, 100)
+		elif opcode == 'amp_veltrack':
+			value = self.convertNumberF(value, -100, 100)
 		else:
 			logging.warning("Unknown opcode: {}".format(opcode))
 			return True

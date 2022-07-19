@@ -41,6 +41,7 @@ class SF2:
 		'instrument': 41,
 		'keyRange': 43,
 		'velRange': 44,
+		'velocity': 47,
 		'initialAttenuation': 48,
 		'fineTune': 52,
 		'sampleID': 53,
@@ -361,9 +362,7 @@ class SF2:
 		if 'Instrument' in self.soundBank.keys():
 			# Create a main preset which includes all instruments
 
-			instrumentName = 'Instrument'
-			if 'Instrument' in self.soundBank.keys():
-				instrumentName = self.soundBank['Instrument']
+			instrumentName = self.soundBank['Instrument']
 			program = self.nextProgram
 			if 'Program' in self.soundBank.keys():
 				program = self.soundBank['Program'] - 1
@@ -407,6 +406,8 @@ class SF2:
 				instrumentName = instrument['Instrument']
 			elif 'Instrument' in self.soundBank.keys():
 				instrumentName = self.soundBank['Instrument']
+			elif 'Name' in self.soundBank.keys():
+				instrumentName = self.soundBank['Name']
 			createPreset = True
 			program = self.nextProgram
 			if 'Program' in instrument.keys():
@@ -526,6 +527,12 @@ class SF2:
 								igenData += struct.pack('<Hh', SF2.sfGenId['overridingRootKey'], pitch)
 								igenNdx += 1
 
+							# velocity
+							ampVelTrack = self.getOpcode('amp_veltrack', instrument, group, region, 100)
+							if ampVelTrack == 0:
+								igenData += struct.pack('<HH', SF2.sfGenId['velocity'], 127)
+								igenNdx += 1
+
 							# other options
 							genList = self.createGenList(None, group, region)
 							for gen in genList.keys():
@@ -538,7 +545,7 @@ class SF2:
 
 						if randomRegion:
 							vel -= 1
-							if vel == 0:
+							if vel < lovel:
 								repeat = False
 								break
 
