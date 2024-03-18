@@ -67,8 +67,6 @@ class SFZ:
 		for hint in ('Name', 'Date', 'URL'):
 			if hint in self.soundBank.keys():
 				outFile.write('//+ {}: {}\n'.format(hint, self.soundBank[hint]))
-		if 'Instrument' in self.soundBank.keys():
-			outFile.write('\n//+ Instrument: {}\n'.format(self.soundBank['Instrument']))
 
 		for instrument in self.soundBank['instruments']:
 			if len(self.soundBank['instruments']) > 1 or len(instrument) > 1:
