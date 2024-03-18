@@ -104,13 +104,16 @@ contents.
 
 ## Limitations
 
-This software is in development and currently supports a small set of
-features.
+* Has only been tested on Linux.
 
 * Only SFZ to SF2 conversion is available. The opposite conversion from SF2 to
 SFZ is not done yet. Other formats are missing.
 
 * Supports a minimal subset of SFZ opcodes.
+
+This software supports a small set of features, and is only useful to convert
+very simple sound fonts, please note that on most cases the resulting file
+will require manual editing.
 
 
 ## License
